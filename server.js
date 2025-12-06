@@ -40,6 +40,10 @@ function saveConfig() {
 }
 
 // ================= UTILS =================
+function formatRupiah(amount) {
+  return `Rp ${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+}
+
 function openPrinter() {
   const device = new escpos.Network(config.printer_ip);
   const printer = new escpos.Printer(device);
@@ -112,33 +116,45 @@ app.post("/print-sale", (req, res) => {
     printer.font("b").size(1, 1);
 
     printer.align("ct");
+    printer.style("b");
     printer.text("GUSSY SALON");
+    printer.style("normal");
+    printer.text("Jl Tentara Pelajar No 11 Purwokerto");
+    printer.text("Telp: +62 877 7707 9820");
     printer.text("--------------------------------");
 
     printer.align("lt");
-    printer.text(`ID    : ${sale.id}`);
-    printer.text(`Cust  : ${sale.client_name}`);
-    printer.text(`Kasir : ${sale.staff?.fullname || "-"}`);
+    printer.style("normal");
+    printer.text(`ID      : ${sale.id}`);
+    printer.text(`Cust    : ${sale.client_name}`);
+    printer.text(`Kapster : ${sale.staff?.fullname || "-"}`);
     printer.text("--------------------------------");
 
     sale.items.forEach((item) => {
       printer.text(item.name);
-      printer.text(`x1   ${item.price}`);
+      printer.text(`x1   ${formatRupiah(item.price)}`);
     });
 
     printer.text("--------------------------------");
 
+    if (sale.points_used > 0) {
+      printer.text(`Point: -${formatRupiah(sale.points_used)}`);
+    }
+
     if (sale.discount > 0) {
-      printer.text(`Diskon: -${sale.discount}`);
+      printer.text(`Diskon: -${formatRupiah(sale.discount)}`);
     }
 
     printer.style("b");
-    printer.text(`TOTAL: ${sale.total_amount}`);
+    printer.text(`TOTAL: ${formatRupiah(sale.total_amount)}`);
     printer.style("normal");
+
+    printer.text("--------------------------------");
 
     printer.feed(1);
     printer.align("ct");
     printer.text("Terima kasih");
+    printer.text("Join member di gussysalon.com");
     printer.cut();
     printer.close();
 
